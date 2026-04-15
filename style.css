@@ -1,0 +1,154 @@
+﻿:root {
+  --bg: #0f172a;
+  --panel: #1e293b;
+  --accent: #38bdf8;
+  --accent-strong: #0ea5e9;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+  --danger: #ef4444;
+  --stamp-red: #e11d48;
+  --shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.08), transparent 35%),
+              radial-gradient(circle at 80% 30%, rgba(14,165,233,0.1), transparent 35%),
+              var(--bg);
+  color: var(--text);
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15,23,42,0.9);
+  backdrop-filter: blur(6px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.title { font-size: 20px; font-weight: 700; }
+.actions { display: flex; gap: 12px; align-items: center; }
+
+main {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+  padding: 16px 16px 32px;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.panel-title { font-weight: 700; margin-right: 8px; }
+.muted { color: var(--muted); }
+.small { font-size: 12px; }
+
+button {
+  background: var(--border);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-weight: 600;
+}
+
+button:hover { border-color: var(--accent); color: #fff; }
+button.primary { background: var(--accent); border-color: var(--accent-strong); color: #0b1224; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.seals-panel { display: flex; flex-direction: column; gap: 12px; }
+.seal-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+
+.seal-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  text-align: center;
+}
+.seal-card img { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+.seal-card input { margin-right: 6px; }
+.seal-card button { width: 100%; }
+
+.control-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.control-title { font-weight: 700; font-size: 14px; }
+.control-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+.control-card input[type="range"] { width: 100%; }
+.danger-btn { background: rgba(239,68,68,0.15); border-color: var(--danger); color: #fecdd3; }
+.danger-btn:hover { background: rgba(239,68,68,0.25); border-color: #f87171; color: #fff; }
+
+.viewer-panel { display: flex; flex-direction: column; gap: 12px; }
+.viewer-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.viewer-controls { display: flex; gap: 8px; align-items: center; }
+
+.viewer-container {
+  min-height: 400px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(255,255,255,0.02);
+  position: relative;
+  overflow: auto;
+}
+
+.page-wrapper { position: relative; display: inline-block; }
+.canvas-layer { display: block; background: #fff; border-radius: 8px; }
+.overlay-layer { position: absolute; left: 0; top: 0; pointer-events: none; }
+.stamp-instance {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  user-select: none;
+  pointer-events: auto;
+  cursor: grab;
+  filter: drop-shadow(0 8px 14px rgba(0,0,0,0.35));
+  transition: box-shadow 0.15s ease;
+}
+.stamp-instance.dragging { box-shadow: 0 0 0 2px var(--accent); }
+.stamp-instance.selected { box-shadow: 0 0 0 2px var(--accent-strong); }
+.stamp-img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.stamp-date {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--stamp-red);
+  font-weight: 700;
+  text-shadow: 0 0 2px rgba(255,255,255,0.6);
+}
+
+.badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(56,189,248,0.15); border: 1px solid var(--accent); padding: 4px 8px; border-radius: 8px; }
+
+@media (max-width: 1080px) {
+  main { grid-template-columns: 1fr; }
+  header { position: static; }
+}

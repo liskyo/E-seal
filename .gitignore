@@ -1,0 +1,23 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Redundant backup files
+* - 複製*.*
+
+# Documentations and Office files (optional, but keep project clean)
+# *.pdf
+# *.docx
+
+# Environment variables
+.env

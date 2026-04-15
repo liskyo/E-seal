@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-seal 用印工具</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="./node_modules/pdfjs-dist/build/pdf.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = './node_modules/pdfjs-dist/build/pdf.worker.min.js';
+    pdfjsLib.disableWorker = true;
+  </script>
+  <script src="./node_modules/interactjs/dist/interact.min.js"></script>
+  <script src="./node_modules/pdf-lib/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="title">E-seal 用印工具</div>
+    <div class="actions">
+      <button id="uploadPdf">上傳 PDF</button>
+      <div id="currentFile" class="muted">尚未選擇</div>
+    </div>
+  </header>
+
+  <main>
+    <section class="panel seals-panel">
+      <div class="panel-title">用印模組 (最多 2 個)</div>
+      <div id="sealList" class="seal-list"></div>
+      <div id="sealTips" class="muted small">點擊章圖可加入當前頁面，拖曳調整位置。</div>
+      <div class="control-card">
+        <div class="control-title">尺寸調整</div>
+        <div class="control-row">
+          <span>寬高 (px)</span>
+          <span id="sizeValue" class="muted">120</span>
+        </div>
+        <input id="sizeSlider" type="range" min="60" max="260" value="120" />
+        <label class="control-row small">
+          <input id="showDateToggle" type="checkbox" checked />
+          <span>章中顯示日期 (YYYY-MM-DD)</span>
+        </label>
+        <div class="control-row">
+          <span>日期文字</span>
+          <span id="dateSizeValue" class="muted">100%</span>
+        </div>
+        <input id="dateSizeSlider" type="range" min="60" max="160" value="100" />
+        <div class="control-row">
+          <span>日期上下</span>
+          <span id="dateYOffsetValue" class="muted">0px</span>
+        </div>
+        <input id="dateYOffsetSlider" type="range" min="-40" max="40" value="0" />
+        <button id="deleteStamp" class="danger-btn" disabled>🗑 移除選中印章</button>
+      </div>
+    </section>
+
+    <section class="panel viewer-panel">
+      <div class="viewer-header">
+        <div>
+          <span class="panel-title">PDF 預覽</span>
+          <span id="pageInfo" class="muted"></span>
+        </div>
+        <div class="viewer-controls">
+          <button id="prevPage">上一頁</button>
+          <button id="nextPage">下一頁</button>
+          <button id="exportPdf" class="primary">輸出 PDF</button>
+        </div>
+      </div>
+      <div id="viewerContainer" class="viewer-container"></div>
+    </section>
+  </main>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
