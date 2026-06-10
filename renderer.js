@@ -20,6 +20,7 @@ const dateSizeSlider = document.getElementById('dateSizeSlider');
 const dateSizeValue = document.getElementById('dateSizeValue');
 const dateYOffsetSlider = document.getElementById('dateYOffsetSlider');
 const dateYOffsetValue = document.getElementById('dateYOffsetValue');
+const stampDateInput = document.getElementById('stampDateInput');
 
 let seals = [];
 let selectedSealNames = new Set();
@@ -43,8 +44,7 @@ function generateDateStampBase64() {
   canvas.height = size;
   const ctx = canvas.getContext('2d');
   const red = '#e11d48';
-  const d = new Date();
-  const dateText = `${d.getFullYear()}-${addZero(d.getMonth() + 1)}-${addZero(d.getDate())}`;
+  const dateText = getStampDateValue();
 
   ctx.fillStyle = 'transparent';
   ctx.fillRect(0, 0, size, size);
@@ -72,14 +72,21 @@ function generateDateStampBase64() {
 
 const addZero = (n) => (n < 10 ? `0${n}` : `${n}`);
 const makeId = () => (crypto.randomUUID ? crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-const formatDateTag = () => {
-  const d = new Date();
-  return `${d.getFullYear()}${addZero(d.getMonth() + 1)}${addZero(d.getDate())}用印`;
-};
-const formatDateDisplay = () => {
+const getTodayDateString = () => {
   const d = new Date();
   return `${d.getFullYear()}-${addZero(d.getMonth() + 1)}-${addZero(d.getDate())}`;
 };
+const getStampDateValue = () => {
+  const val = stampDateInput?.value;
+  return val && /^\d{4}-\d{2}-\d{2}$/.test(val) ? val : getTodayDateString();
+};
+const getPlacementDateText = (placement) => placement?.dateText || getStampDateValue();
+const formatDateTag = (dateStr) => {
+  const text = dateStr || getStampDateValue();
+  return `${text.replace(/-/g, '')}用印`;
+};
+
+stampDateInput.value = getTodayDateString();
 
 function createTextImage(text, fontSize = 12) {
   const stampColor = getStampColor();
@@ -212,6 +219,7 @@ function updateSizeControls() {
     dateSizeValue.textContent = '-';
     dateYOffsetSlider.disabled = true;
     dateYOffsetValue.textContent = '-';
+    stampDateInput.disabled = false;
     sizeValue.textContent = '-';
     return;
   }
@@ -225,6 +233,8 @@ function updateSizeControls() {
   dateYOffsetSlider.disabled = false;
   dateYOffsetSlider.value = Math.round(placement.dateYOffset || 0);
   dateYOffsetValue.textContent = `${Math.round(placement.dateYOffset || 0)}px`;
+  stampDateInput.disabled = false;
+  stampDateInput.value = getPlacementDateText(placement);
   sizeSlider.value = Math.round(placement.width);
   sizeValue.textContent = Math.round(placement.width);
 }
@@ -401,6 +411,7 @@ async function addStampInstance(sealName) {
         width: defaultSize,
         height: defaultSize,
         withDate: true,
+        dateText: getStampDateValue(),
         dateScale: defaultDateScale,
         dateYOffset: defaultDateYOffset,
       };
@@ -446,7 +457,7 @@ function createStampElement(placement) {
     const fontSize = Math.max(10, placement.width * 0.13 * (placement.dateScale || 1));
     dateOverlay.style.fontSize = `${fontSize}px`;
     dateOverlay.style.transform = `translateY(${placement.dateYOffset || 0}px)`;
-    dateOverlay.textContent = formatDateDisplay();
+    dateOverlay.textContent = getPlacementDateText(placement);
     wrapper.appendChild(dateOverlay);
   }
 
@@ -538,10 +549,10 @@ showDateToggle.addEventListener('change', () => {
       dateOverlay.className = 'stamp-date';
       dateOverlay.style.fontSize = `${Math.max(10, placement.width * 0.13 * (placement.dateScale || 1))}px`;
       dateOverlay.style.transform = `translateY(${placement.dateYOffset || 0}px)`;
-      dateOverlay.textContent = formatDateDisplay();
+      dateOverlay.textContent = getPlacementDateText(placement);
       el.appendChild(dateOverlay);
     } else {
-      overlay.textContent = formatDateDisplay();
+      overlay.textContent = getPlacementDateText(placement);
       overlay.style.fontSize = `${Math.max(10, placement.width * 0.13 * (placement.dateScale || 1))}px`;
       overlay.style.transform = `translateY(${placement.dateYOffset || 0}px)`;
     }
@@ -579,6 +590,19 @@ dateYOffsetSlider.addEventListener('input', () => {
   }
 });
 
+stampDateInput.addEventListener('change', () => {
+  const dateText = getStampDateValue();
+  const placement = placements.find((p) => p.id === selectedPlacementId);
+  if (placement) {
+    placement.dateText = dateText;
+    const el = viewerContainer.querySelector(`.stamp-instance[data-id="${placement.id}"]`);
+    if (el) {
+      const overlay = el.querySelector('.stamp-date');
+      if (overlay) overlay.textContent = dateText;
+    }
+  }
+});
+
 exportBtn.addEventListener('click', async () => {
   if (!pdfBytes || !pdfDoc) return;
   if (selectedSealNames.size === 0) {
@@ -611,7 +635,7 @@ exportBtn.addEventListener('click', async () => {
 
 function buildSuggestedName() {
   const selected = Array.from(selectedSealNames);
-  const dateTag = formatDateTag().replace('用印', '');
+  const dateTag = formatDateTag(getStampDateValue()).replace('用印', '');
   const sealPart = selected.join('_');
   const base = pdfBaseName || 'output';
   return `${base}_${sealPart}_${dateTag}.pdf`;
@@ -637,8 +661,6 @@ async function buildStampedPdf() {
 
   console.log(`[Export] Starting. Placements count: ${placements.length}`);
   let drawCount = 0;
-
-  const dateStampText = formatDateDisplay();
 
   for (const placement of placements) {
     const pageIndex = placement.page - 1;
@@ -697,7 +719,7 @@ async function buildStampedPdf() {
     });
 
     if (placement.withDate) {
-      const dateCenterText = dateStampText;
+      const dateCenterText = getPlacementDateText(placement);
       const fontSizePx = Math.max(10, placement.width * 0.13 * (placement.dateScale || 1));
       const centerImg = createTextImage(dateCenterText, fontSizePx);
       const centerPng = await pdfDocLib.embedPng(base64ToUint8(centerImg.base64));

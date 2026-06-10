@@ -101,6 +101,21 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .control-title { font-weight: 700; font-size: 14px; }
 .control-row { display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
 .control-card input[type="range"] { width: 100%; }
+.control-card input[type="date"] {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+}
+.control-card input[type="date"]:disabled { opacity: 0.5; cursor: not-allowed; }
+.control-card input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.8);
+  cursor: pointer;
+}
 .danger-btn { background: rgba(239,68,68,0.15); border-color: var(--danger); color: #fecdd3; }
 .danger-btn:hover { background: rgba(239,68,68,0.25); border-color: #f87171; color: #fff; }
 
