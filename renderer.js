@@ -618,7 +618,7 @@ function buildSuggestedName() {
 }
 
 async function buildStampedPdf() {
-  const { PDFDocument } = PDFLib;
+  const { PDFDocument, degrees } = PDFLib;
   let sourceBytes = pdfBytes;
   if (!sourceBytes || (sourceBytes.length === 0)) {
     if (pdfBase64) {
@@ -646,19 +646,23 @@ async function buildStampedPdf() {
     let meta = pageMeta[placement.page];
     
     if (!meta) {
-      console.warn(`[Export] Missing meta for page ${placement.page}, attempting fallback.`);
-      const pdfJsPage = await pdfDoc.getPage(placement.page);
-      const sc = 1.3;
-      const vp = pdfJsPage.getViewport({ scale: sc });
-      meta = {
-        scale: sc,
-        viewWidth: vp.width,
-        viewHeight: vp.height,
-        pdfWidth: vp.width / sc,
-        pdfHeight: vp.height / sc,
-      };
-      pageMeta[placement.page] = meta;
+      console.warn(`[Export] Missing meta for page ${placement.page}, but we can use scale 1.3.`);
+      meta = { scale: 1.3 };
     }
+
+    const pdfJsPage = await pdfDoc.getPage(placement.page);
+    const vp = pdfJsPage.getViewport({ scale: meta.scale });
+    const m = vp.transform;
+    const det = m[0] * m[3] - m[1] * m[2];
+    const inv = [
+      m[3] / det, -m[1] / det, -m[2] / det, m[0] / det,
+      (m[2] * m[5] - m[3] * m[4]) / det,
+      (m[1] * m[4] - m[0] * m[5]) / det
+    ];
+    const applyTransform = (pt) => [
+      inv[0] * pt[0] + inv[2] * pt[1] + inv[4],
+      inv[1] * pt[0] + inv[3] * pt[1] + inv[5]
+    ];
 
     let img = imageCache.get(placement.sealName);
     if (!img) {
@@ -668,33 +672,59 @@ async function buildStampedPdf() {
       imageCache.set(placement.sealName, img);
     }
 
-    const cropBox = page.getCropBox();
-    const pdfX = cropBox.x + (placement.x / meta.scale);
-    const pdfY = cropBox.y + cropBox.height - (placement.y + placement.height) / meta.scale;
-    const pdfW = placement.width / meta.scale;
-    const pdfH = placement.height / meta.scale;
+    const px = placement.x;
+    const py = placement.y;
+    const pw = placement.width;
+    const ph = placement.height;
 
-    page.drawImage(img, { x: pdfX, y: pdfY, width: pdfW, height: pdfH });
+    // Map UI canvas points to absolute PDF coordinate space
+    const pBL = applyTransform([px, py + ph]); // Visual Bottom-Left
+    const pBR = applyTransform([px + pw, py + ph]); // Visual Bottom-Right
+    const pTL = applyTransform([px, py]); // Visual Top-Left
+
+    const pdfX = pBL[0];
+    const pdfY = pBL[1];
+    const pdfW = Math.hypot(pBR[0] - pBL[0], pBR[1] - pBL[1]);
+    const pdfH = Math.hypot(pTL[0] - pBL[0], pTL[1] - pBL[1]);
+    const rad = Math.atan2(pBR[1] - pBL[1], pBR[0] - pBL[0]);
+
+    page.drawImage(img, {
+      x: pdfX,
+      y: pdfY,
+      width: pdfW,
+      height: pdfH,
+      rotate: degrees((rad * 180) / Math.PI),
+    });
 
     if (placement.withDate) {
       const dateCenterText = dateStampText;
       const fontSizePx = Math.max(10, placement.width * 0.13 * (placement.dateScale || 1));
       const centerImg = createTextImage(dateCenterText, fontSizePx);
       const centerPng = await pdfDocLib.embedPng(base64ToUint8(centerImg.base64));
+      
       let drawH = (centerImg.height / meta.scale);
       let drawW = (centerImg.width / meta.scale);
       if (drawW > pdfW * 0.9) {
         drawW = pdfW * 0.9;
         drawH = drawW * (centerPng.height / centerPng.width);
       }
-      const textX = pdfX + pdfW / 2 - drawW / 2;
-      const offsetPdf = -(placement.dateYOffset || 0) / meta.scale;
-      const textY = pdfY + pdfH / 2 - drawH / 2 + offsetPdf;
+
+      const tcx = px + pw / 2;
+      const tcy = py + ph / 2 + (placement.dateYOffset || 0);
+      const tw_px = drawW * meta.scale;
+      const th_px = drawH * meta.scale;
+
+      const tBL = applyTransform([tcx - tw_px / 2, tcy + th_px / 2]);
+      const tBR = applyTransform([tcx + tw_px / 2, tcy + th_px / 2]);
+      const tPdfW = Math.hypot(tBR[0] - tBL[0], tBR[1] - tBL[1]);
+      const tRad = Math.atan2(tBR[1] - tBL[1], tBR[0] - tBL[0]);
+
       page.drawImage(centerPng, {
-        x: textX,
-        y: textY,
-        width: drawW,
+        x: tBL[0],
+        y: tBL[1],
+        width: tPdfW,
         height: drawH,
+        rotate: degrees((tRad * 180) / Math.PI),
       });
     }
     drawCount++;
